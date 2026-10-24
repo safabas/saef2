@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b7791f"><title>المولدة</title>
+<style>
+:root{--g:#b7791f;--bg:#f5f3ee;--c:#fff;--t:#1d2430;--m:#6b7280;--b:#e5e1d8;--ok:#0f766e;--bad:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#14171c;--c:#1d222a;--t:#eceff4;--m:#9aa4b2;--b:#2c333d}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Tahoma,Arial,sans-serif;background:var(--bg);color:var(--t);padding:env(safe-area-inset-top) 0 calc(64px + env(safe-area-inset-bottom))}
+header{background:var(--g);color:#fff;padding:10px 12px;position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center}
+header b{flex:1}header input{width:auto;background:#fff3;color:#fff;border:0;padding:6px}
+main{padding:10px;max-width:640px;margin:auto}
+.box{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:12px;margin-bottom:10px}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--b);border-radius:9px;background:var(--bg);color:var(--t)}
+label{display:block;font-size:12px;color:var(--m);margin:8px 0 3px}
+button{font:inherit;border:0;border-radius:9px;padding:9px 12px;background:var(--g);color:#fff;font-weight:600}
+button.s{background:var(--bg);color:var(--t);border:1px solid var(--b)}button.r{background:var(--bad)}button.k{background:var(--ok)}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.sp{justify-content:space-between}
+.chip{padding:6px 11px;border-radius:99px;border:1px solid var(--b);background:var(--c);color:var(--t);font-size:13px}.chip.on{background:var(--g);color:#fff}
+.m{color:var(--m);font-size:13px}.ok{color:var(--ok)}.bad{color:var(--bad)}.big{font-size:18px;font-weight:700}
+nav{position:fixed;bottom:0;inset-inline:0;background:var(--c);border-top:1px solid var(--b);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:var(--m);border-radius:0;font-size:12px;padding:10px 2px}nav button.on{color:var(--g)}
+.mod{position:fixed;inset:0;background:#0007;display:flex;align-items:flex-end;z-index:20}
+.sh{background:var(--c);width:100%;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid .box{margin:0;text-align:center}
+</style></head><body>
+<header><b id="ttl">المولدة</b><input type="month" id="mon"></header><main id="app"></main>
+<nav id="nav"></nav>
+<script>
+"use strict";
+const KEY="gen_v1",$=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fm=n=>Math.round(+n||0).toLocaleString("en-US");
+const DEF={subs:[],pay:[],prices:{},exp:[],ops:[],sal:{},notes:[],boards:{1:"بورد 1",2:"بورد 2",3:"البورد الرئيسي"},
+ tpl:{late:"السلام عليكم {name}\nنذكّرك بتسديد اشتراك المولدة لشهر {month}.\nالمتبقي عليك: {debt} د.ع\nشكراً لتعاونك.",
+      paid:"السلام عليكم {name}\nتم استلام مبلغ {paid} د.ع اشتراك المولدة لشهر {month}.\nالمتبقي: {debt} د.ع\nشكراً لك."}};
+let D;try{D=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){D=JSON.parse(JSON.stringify(DEF))}
+const save=()=>localStorage.setItem(KEY,JSON.stringify(D));
+const mig=()=>{if(!D.b3){D.boards[3]=D.boards[3]||"البورد الرئيسي";D.b3=1;save()}};mig();
+const LN={gold:"ذهبي",reg:"عادي"},uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+let V="subs",M=new Date().toISOString().slice(0,7),F={st:"all",bd:"0",q:""};
+// LICBEGIN
+const PUB=/*PUB*/null/*END*/;
+const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const unb64u=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
+const devId=()=>{let d=localStorage.getItem("gen_dev");if(!d){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";d=Array.from(crypto.getRandomValues(new Uint8Array(12)),x=>a[x%32]).join("");localStorage.setItem("gen_dev",d)}return d};
+const fmtDev=d=>d.match(/.{4}/g).join("-");
+const todayS=()=>new Date().toISOString().slice(0,10);
+async function checkCode(code){try{const[p,g]=code.trim().split(".");const pl=new TextDecoder().decode(unb64u(p)),[tag,dev,exp,name]=pl.split("|");
+ const k=await crypto.subtle.importKey("jwk",PUB,{name:"ECDSA",namedCurve:"P-256"},false,["verify"]);
+ if(!await crypto.subtle.verify({name:"ECDSA",hash:"SHA-256"},k,unb64u(g),new TextEncoder().encode(pl))||tag!=="GEN1")throw 0;
+ if(dev!==devId())throw "هذا الكود مخصص لجهاز آخر";return{exp,name}}catch(e){throw typeof e==="string"?e:"الكود غير صحيح"}}
+// LICEND
+let LIC=null;
+function lock(msg){$("#nav").innerHTML="";$("#mon").style.display="none";
+ $("#app").innerHTML=`<div class="box"><h3 style="margin-top:0">تفعيل البرنامج</h3><div class="m">أرسل رقم الجهاز هذا لمزوّد البرنامج ليعطيك كود التفعيل:</div><div class="big" style="direction:ltr;text-align:center;margin:12px 0">${fmtDev(devId())}</div><button class="s" id="cp" style="width:100%">نسخ رقم الجهاز</button><label>كود التفعيل</label><textarea id="ac" rows="4" style="direction:ltr"></textarea><div class="bad" id="ae" style="min-height:20px">${esc(msg||"")}</div><button id="ag" style="width:100%">تفعيل</button></div>`;
+ on("#cp",()=>{navigator.clipboard&&navigator.clipboard.writeText(devId());$("#cp").textContent="تم النسخ"});
+ on("#ag",async()=>{try{const c=$("#ac").value.trim(),r=await checkCode(c);if(r.exp<todayS())throw "هذا الكود منتهي";localStorage.setItem("gen_lic",c);localStorage.setItem("gen_last",todayS());LIC=r;$("#mon").style.display="";draw()}catch(e){$("#ae").textContent=e}})}
+async function boot(){if(!PUB)return draw();
+ if(!(window.crypto&&crypto.subtle))return lock("هذا المتصفح لا يدعم التفعيل. افتح البرنامج من التطبيق أو من Chrome");
+ const c=localStorage.getItem("gen_lic");
+ if(c){try{const r=await checkCode(c),t=todayS();
+  if((localStorage.getItem("gen_last")||"")>t)return lock("تاريخ الجهاز غير صحيح، صحّح التاريخ والوقت");
+  localStorage.setItem("gen_last",t);if(r.exp<t)return lock("انتهى الاشتراك بتاريخ "+r.exp+". أدخل كود التجديد");LIC=r;return draw()}catch(e){}}
+ lock()}
+const licBox=()=>PUB&&LIC?`<div class="box"><b>الترخيص</b><div class="m">${esc(LIC.name)} • ${LIC.exp>="9999"?"دائم":"ينتهي "+esc(LIC.exp)}</div><div class="m" style="direction:ltr">${fmtDev(devId())}</div></div>`:""
+// ---------- الحسابات
+const price=(l,m)=>{const ks=Object.keys(D.prices).filter(k=>k<=m&&D.prices[k][l]!=null).sort();return ks.length?+D.prices[ks.pop()][l]:0};
+const due=(s,m)=>s.amps*price(s.line,m);
+const paidIn=(s,m)=>D.pay.filter(p=>p.id===s.id&&p.m===m).reduce((a,p)=>a+p.amt,0);
+const mlist=(a,b)=>{const o=[];let[y,m]=a.split("-").map(Number);while(y+"-"+String(m).padStart(2,"0")<=b){o.push(y+"-"+String(m).padStart(2,"0"));if(++m>12){m=1;y++}}return o};
+const debt=(s,m)=>(+s.old||0)+mlist(s.start||m,m).reduce((a,x)=>a+due(s,x)-paidIn(s,x),0);
+const isPaid=(s,m)=>due(s,m)>0&&paidIn(s,m)>=due(s,m)&&debt(s,m)<=0;
+const act=()=>D.subs.filter(s=>s.on!==false&&(s.start||M)<=M);
+// ---------- واتساب
+const phone=p=>{p=String(p||"").replace(/\D/g,"");if(p.startsWith("964"))return p;if(p.startsWith("0"))return "964"+p.slice(1);return p?"964"+p:""};
+const msg=(t,s,paid)=>D.tpl[t].replace("{name}",s.name).replace("{month}",M).replace("{debt}",fm(Math.max(0,debt(s,M)))).replace("{paid}",fm(paid||0));
+const wa=(s,t,paid)=>{const n=phone(s.phone);if(!n)return alert("لا يوجد رقم هاتف لهذا المشترك");window.open("https://wa.me/"+n+"?text="+encodeURIComponent(msg(t,s,paid)),"_blank")};
+// ---------- نافذة إدخال
+function form(title,fields,ok,init={}){const m=document.createElement("div");m.className="mod";
+ m.innerHTML=`<div class="sh"><h3 style="margin:0">${esc(title)}</h3>${fields.map(([k,l,t,o])=>`<label>${esc(l)}</label>`+(t==="sel"?`<select id="f_${k}">${o.map(([v,x])=>`<option value="${esc(v)}">${esc(x)}</option>`).join("")}</select>`:t==="area"?`<textarea id="f_${k}" rows="4"></textarea>`:`<input id="f_${k}" type="${t||"text"}" ${t==="number"?'inputmode="decimal"':""}>`)).join("")}
+ <div class="row" style="margin-top:12px"><button id="fo" style="flex:2">حفظ</button><button class="s" id="fc" style="flex:1">إلغاء</button></div></div>`;
+ document.body.appendChild(m);fields.forEach(([k])=>{const e=$("#f_"+k);if(init[k]!=null)e.value=init[k]});
+ const x=()=>m.remove();$("#fc").onclick=x;m.onclick=e=>{if(e.target===m)x()};
+ $("#fo").onclick=()=>{const v={};fields.forEach(([k])=>v[k]=$("#f_"+k).value.trim());if(ok(v)!==false)x()}}
+const BD=()=>Object.entries(D.boards),LNS=[["gold","خط ذهبي"],["reg","خط عادي"]];
+// ---------- المشتركون
+function subForm(s){form(s?"تعديل مشترك":"إضافة مشترك",[["name","الاسم"],["phone","رقم الواتساب","tel"],["board","البورد","sel",BD()],["line","نوع الخط","sel",LNS],["amps","عدد الأمبيرات","number"],["old","دين سابق (اختياري)","number"],["note","ملاحظة"]],v=>{
+ if(!v.name||!(+v.amps>0))return alert("اكتب الاسم وعدد الأمبيرات"),false;
+ const o={name:v.name,phone:v.phone,board:v.board,line:v.line,amps:+v.amps,old:+v.old||0,note:v.note};
+ if(s)Object.assign(s,o);else D.subs.push({id:uid(),start:M,on:true,...o});save();draw()},s?{...s}:{board:"1",line:"reg",old:0})}
+function payForm(s){const rem=Math.max(0,due(s,M)-paidIn(s,M));form("تسديد: "+s.name,[["amt","المبلغ المستلم (د.ع)","number"]],v=>{const a=+v.amt;if(!(a>0))return false;
+ D.pay.push({id:s.id,m:M,amt:a,d:new Date().toISOString().slice(0,10)});save();draw();if(confirm("تم التسديد. إرسال رسالة تأكيد بالواتساب؟"))wa(s,"paid",a)},{amt:rem})}
+function viewSubs(){const L=act().filter(s=>(F.bd==="0"||s.board===F.bd)&&(F.st==="all"||(F.st==="paid")===isPaid(s,M))&&(!F.q||(s.name+s.phone).includes(F.q)));
+ const cnt=b=>act().filter(s=>s.board===b).length;
+ return `<div class="box row sp">${BD().map(([b,n])=>`<span>${esc(n)}: <b>${cnt(b)}</b> مشترك</span>`).join("")}</div>
+ <input id="q" placeholder="بحث بالاسم أو الرقم" value="${esc(F.q)}"><div class="row" style="margin:8px 0">
+ ${[["all","الكل"],["paid","الدافعون"],["unp","غير الدافعين"]].map(([v,l])=>`<button class="chip ${F.st===v?"on":""}" data-st="${v}">${l}</button>`).join("")}
+ ${[["0","كل البوردات"],...BD()].map(([v,l])=>`<button class="chip ${F.bd===v?"on":""}" data-bd="${v}">${esc(l)}</button>`).join("")}</div>
+ <button id="add" style="width:100%;margin-bottom:10px">+ إضافة مشترك</button>
+ ${L.map(s=>{const d=due(s,M),p=paidIn(s,M),db=debt(s,M);return `<div class="box"><div class="row sp"><b>${esc(s.name)}</b><span class="${isPaid(s,M)?"ok":"bad"}">${isPaid(s,M)?"✔ دافع":"✖ غير دافع"}</span></div>
+ <div class="m">${esc(D.boards[s.board])} • ${LN[s.line]} • ${s.amps} أمبير × ${fm(price(s.line,M))} = <b>${fm(d)}</b></div>
+ <div class="m">المدفوع هذا الشهر: ${fm(p)} • إجمالي الدين: <b class="${db>0?"bad":""}">${fm(db)}</b></div>${s.note?`<div class="m">📝 ${esc(s.note)}</div>`:""}
+ <div class="row" style="margin-top:8px"><button class="k" data-pay="${s.id}">تسديد</button><button data-late="${s.id}">تذكير 💬</button><button class="s" data-ed="${s.id}">تعديل</button><button class="s" data-del="${s.id}">إيقاف</button></div></div>`}).join("")||'<div class="m" style="text-align:center;padding:30px">لا يوجد مشتركون</div>'}`}
+// ---------- الشهر والملخص
+const expSum=m=>D.exp.filter(e=>e.m===m).reduce((a,e)=>a+e.amt,0);
+const salSum=m=>D.ops.filter(o=>D.sal[o.id+"|"+m]).reduce((a,o)=>a+o.sal,0);
+function viewSum(){const S=act(),pr=D.prices[M]||{};let tot={d:0,p:0},rows=Object.keys(D.boards).map(b=>{const L=S.filter(s=>s.board===b),d=L.reduce((a,s)=>a+due(s,M),0),p=L.reduce((a,s)=>a+paidIn(s,M),0);tot.d+=d;tot.p+=p;
+  return `<div class="box"><b>${esc(D.boards[b])}</b><div class="m">${L.length} مشترك • ${L.filter(s=>isPaid(s,M)).length} دافع</div><div>المطلوب ${fm(d)}</div><div class="ok">المقبوض ${fm(p)}</div><div class="bad">المتبقي ${fm(Math.max(0,d-p))}</div></div>`}).join("");
+ const net=tot.p-expSum(M)-salSum(M),late=S.filter(s=>!isPaid(s,M)&&due(s,M)>0).length,dbt=S.reduce((a,s)=>a+Math.max(0,debt(s,M)),0);
+ return `<div class="box"><b>سعر الأمبير لشهر ${M}</b><div class="m">إذا لم تحدده يُؤخذ آخر سعر مسجّل.</div><div class="row"><div style="flex:1"><label>ذهبي</label><input id="pg" type="number" inputmode="decimal" value="${price("gold",M)}"></div><div style="flex:1"><label>عادي</label><input id="pr" type="number" inputmode="decimal" value="${price("reg",M)}"></div></div><button id="sp" style="margin-top:8px;width:100%">حفظ الأسعار</button></div>
+ <div class="grid">${rows}</div><div class="box" style="margin-top:10px"><div class="row sp"><span>إجمالي المقبوض</span><b class="ok">${fm(tot.p)}</b></div><div class="row sp"><span>صرف المولدة</span><b>${fm(expSum(M))}</b></div><div class="row sp"><span>رواتب المشغلين (المصروفة)</span><b>${fm(salSum(M))}</b></div><div class="row sp big"><span>الصافي</span><span class="${net<0?"bad":"ok"}">${fm(net)}</span></div><div class="row sp m"><span>إجمالي الديون على المشتركين</span><span>${fm(dbt)}</span></div></div>
+ <button id="bulk" style="width:100%">إرسال تذكير للمتأخرين (${late})</button>`}
+function bulk(){const L=act().filter(s=>!isPaid(s,M)&&due(s,M)>0&&phone(s.phone));if(!L.length)return alert("لا يوجد متأخرون لديهم أرقام");let i=0;
+ const m=document.createElement("div");m.className="mod";document.body.appendChild(m);const r=()=>{if(i>=L.length){m.remove();return}
+ m.innerHTML=`<div class="sh"><div class="m">${i+1} من ${L.length}</div><h3>${esc(L[i].name)}</h3><div class="m">${esc(msg("late",L[i]))}</div><div class="row" style="margin-top:12px"><button class="k" id="o" style="flex:2">فتح واتساب</button><button class="s" id="n" style="flex:1">تخطي/التالي</button><button class="s" id="x">إنهاء</button></div></div>`;
+ $("#o").onclick=()=>{wa(L[i],"late");i++;r()};$("#n").onclick=()=>{i++;r()};$("#x").onclick=()=>m.remove()};r()}
+// ---------- المصاريف والمشغلون
+function viewExp(){const L=D.exp.filter(e=>e.m===M);return `<button id="ae" style="width:100%;margin-bottom:10px">+ صرف جديد</button><div class="box row sp"><span>مجموع صرف ${M}</span><b>${fm(expSum(M))}</b></div>
+ ${L.map(e=>`<div class="box row sp"><div><b>${esc(e.type)}</b> <span class="m">${esc(e.d)}</span><div class="m">${esc(e.note)}</div></div><div><b>${fm(e.amt)}</b> <button class="s" data-de="${e.id}">✕</button></div></div>`).join("")}`}
+function viewOps(){return `<button id="ao" style="width:100%;margin-bottom:10px">+ مشغّل جديد</button>${D.ops.map(o=>`<div class="box"><div class="row sp"><b>${esc(o.name)}</b><span>${fm(o.sal)} د.ع</span></div><div class="m">${esc(D.boards[o.board]||"")}</div>
+ <div class="row" style="margin-top:6px"><button class="${D.sal[o.id+"|"+M]?"k":"s"}" data-sl="${o.id}">${D.sal[o.id+"|"+M]?"✔ صُرف راتب "+M:"صرف راتب "+M}</button><button class="s" data-do="${o.id}">حذف</button></div></div>`).join("")||'<div class="m" style="text-align:center;padding:30px">لا يوجد مشغلون</div>'}`}
+// ---------- ملاحظات وإعدادات
+function viewMore(){return `${licBox()}<div class="box"><b>الملاحظات</b><textarea id="nt" rows="2" placeholder="اكتب ملاحظة"></textarea><button id="an" style="margin-top:6px;width:100%">إضافة</button>
+ ${D.notes.slice().reverse().map(n=>`<div class="row sp" style="border-top:1px solid var(--b);padding:6px 0"><div>${esc(n.t)}<div class="m">${esc(n.d)}</div></div><button class="s" data-dn="${n.id}">✕</button></div>`).join("")}</div>
+ <div class="box"><b>أسماء البوردات</b>${BD().map(([k,n])=>`<input id="bd_${k}" value="${esc(n)}" style="margin-bottom:6px">`).join("")}<button class="s" id="ab" style="width:100%">+ إضافة بورد جديد</button>
+ <label>رسالة التذكير ({name} {month} {debt})</label><textarea id="t1" rows="4">${esc(D.tpl.late)}</textarea><label>رسالة التسديد ({name} {month} {paid} {debt})</label><textarea id="t2" rows="4">${esc(D.tpl.paid)}</textarea><button id="st" style="margin-top:8px;width:100%">حفظ</button></div>
+ <div class="box"><b>نسخة احتياطية</b><div class="m">البيانات محفوظة على هذا الجهاز فقط. صدّر نسخة بشكل دوري.</div><div class="row" style="margin-top:6px"><button id="ex">تصدير ملف</button><button class="s" id="im">استيراد ملف</button><button id="cx">نسخ كنص</button><button class="s" id="pm">لصق نص</button></div></div>`}
+// ---------- الرسم وربط الأحداث
+const TABS=[["subs","👥","المشتركون"],["sum","📊","الشهر"],["exp","⛽","الصرف"],["ops","🧑‍🔧","المشغلون"],["more","⚙️","المزيد"]];
+function draw(){$("#nav").innerHTML=TABS.map(([k,i,l])=>`<button class="${V===k?"on":""}" data-v="${k}"><div style="font-size:18px">${i}</div>${l}</button>`).join("");
+ $("#app").innerHTML={subs:viewSubs,sum:viewSum,exp:viewExp,ops:viewOps,more:viewMore}[V]();$("#mon").value=M;bind()}
+const on=(s,f)=>{const e=$(s);if(e)e.onclick=f},all=(s,f)=>document.querySelectorAll(s).forEach(e=>e.onclick=()=>f(e.dataset));
+function bind(){all("[data-v]",d=>{V=d.v;draw()});
+ if(V==="subs"){const q=$("#q");q.oninput=()=>{F.q=q.value.trim();const p=q.selectionStart;draw();const n=$("#q");n.focus();n.setSelectionRange(p,p)};
+  all("[data-st]",d=>{F.st=d.st;draw()});all("[data-bd]",d=>{F.bd=d.bd;draw()});on("#add",()=>subForm());
+  const g=id=>D.subs.find(s=>s.id===id);all("[data-pay]",d=>payForm(g(d.pay)));all("[data-late]",d=>wa(g(d.late),"late"));all("[data-ed]",d=>subForm(g(d.ed)));
+  all("[data-del]",d=>{if(confirm("إيقاف هذا المشترك؟ (تبقى بياناته)")){g(d.del).on=false;save();draw()}})}
+ if(V==="sum"){on("#sp",()=>{D.prices[M]={gold:+$("#pg").value||0,reg:+$("#pr").value||0};save();draw()});on("#bulk",bulk)}
+ if(V==="exp"){on("#ae",()=>form("صرف جديد",[["type","النوع","sel",["وقود","صيانة","زيوت/فلاتر","أخرى"].map(x=>[x,x])],["amt","المبلغ","number"],["note","ملاحظة"]],v=>{if(!(+v.amt>0))return false;D.exp.push({id:uid(),m:M,type:v.type,amt:+v.amt,note:v.note,d:new Date().toISOString().slice(0,10)});save();draw()}));
+  all("[data-de]",d=>{if(confirm("حذف؟")){D.exp=D.exp.filter(e=>e.id!==d.de);save();draw()}})}
+ if(V==="ops"){on("#ao",()=>form("مشغّل جديد",[["name","الاسم"],["board","البورد","sel",BD()],["sal","الراتب الشهري","number"]],v=>{if(!v.name)return false;D.ops.push({id:uid(),name:v.name,board:v.board,sal:+v.sal||0});save();draw()}));
+  all("[data-sl]",d=>{const k=d.sl+"|"+M;D.sal[k]?delete D.sal[k]:D.sal[k]=1;save();draw()});all("[data-do]",d=>{if(confirm("حذف المشغّل؟")){D.ops=D.ops.filter(o=>o.id!==d.do);save();draw()}})}
+ if(V==="more"){on("#an",()=>{const t=$("#nt").value.trim();if(t){D.notes.push({id:uid(),t,d:new Date().toISOString().slice(0,10)});save();draw()}});all("[data-dn]",d=>{D.notes=D.notes.filter(n=>n.id!==d.dn);save();draw()});
+  on("#ab",()=>form("إضافة بورد",[["name","اسم البورد"]],v=>{if(!v.name)return false;D.boards[String(Math.max(...Object.keys(D.boards).map(Number))+1)]=v.name;save();draw()}));
+  on("#st",()=>{Object.keys(D.boards).forEach(k=>D.boards[k]=$("#bd_"+k).value.trim()||D.boards[k]);D.tpl.late=$("#t1").value;D.tpl.paid=$("#t2").value;save();draw()});
+  on("#cx",()=>{navigator.clipboard.writeText(JSON.stringify(D)).then(()=>alert("تم نسخ النسخة الاحتياطية. الصقها بمكان آمن مثل محادثة واتساب مع نفسك"),()=>alert("تعذّر النسخ"))});
+  on("#pm",()=>form("لصق نسخة احتياطية",[["t","الصق النص هنا","area"]],v=>{try{const j=JSON.parse(v.t);if(!j.subs)throw 0;D=Object.assign({},DEF,j);mig();save();draw();alert("تم الاستيراد")}catch(e){alert("نص غير صالح");return false}}));
+  on("#ex",()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:"application/json"}));a.download="generator-backup-"+M+".json";a.click()});
+  on("#im",()=>{const i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{const r=new FileReader();r.onload=()=>{try{D=Object.assign({},DEF,JSON.parse(r.result));mig();save();draw();alert("تم الاستيراد")}catch(e){alert("ملف غير صالح")}};r.readAsText(i.files[0])};i.click()})}}
+$("#mon").onchange=e=>{if(e.target.value){M=e.target.value;draw()}};boot();
+</script></body></html>
